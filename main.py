@@ -1,7 +1,6 @@
 from typing import Optional
 
 
-# Узел дерева
 class TreeNode:
     def __init__(self, value: float, less=None, more=None, parent=None):
         self.value = value
@@ -10,7 +9,6 @@ class TreeNode:
         self.parent = parent
 
 
-# Дерево
 class Tree:
     root: Optional[TreeNode] = None
 
@@ -118,15 +116,32 @@ class Tree:
     def remove(self, value: float):
         element_to_remove = self.search_r(self.root, value)
         root = element_to_remove.parent
+        if element_to_remove.more is None:
+            successor = element_to_remove.less
+            if successor is not None:
+                successor.parent = root
+            if root is not None:
+                if self.is_right_branch(element_to_remove):
+                    root.more = successor
+                else:
+                    root.less = successor
+                return
+            else:
+                self.root = successor
+                return
 
-        left = element_to_remove.less
-        left.parent = None
+
+
 
         right = element_to_remove.more
         right.parent = None
+
+        left = element_to_remove.less
+
         while right.less is not None:
             right = right.less
-        left.parent = right
+        if left is not None:
+            left.parent = right
         right.less = left
 
         successor = right
@@ -140,6 +155,9 @@ class Tree:
                 root.less = successor
         else:
             self.root = successor
+
+    def is_right_branch(self, node: TreeNode):
+        return node.parent.value < node.value
 
 
     # def remove(self, value: float):
