@@ -1,3 +1,8 @@
+import sys
+import time
+import numpy as np
+import matplotlib.pyplot as plt
+
 from typing import Optional
 
 
@@ -79,6 +84,8 @@ class Tree:
     #    @return TreeNode - узел дерева с заданным значением
     #
     def search_r(self, item: TreeNode, value: float):
+        if item is None:
+            return None
         if item.value == value:
             return item
         if (item.more is None and item.value < value) or (item.less is None and item.value > value):
@@ -115,6 +122,8 @@ class Tree:
     #
     def remove(self, value: float):
         element_to_remove = self.search_r(self.root, value)
+        if element_to_remove is None:
+            return
         root = element_to_remove.parent
         if element_to_remove.more is None:
             successor = element_to_remove.less
@@ -159,53 +168,40 @@ class Tree:
     def is_right_branch(self, node: TreeNode):
         return node.parent.value < node.value
 
-
-    # def remove(self, value: float):
-    #     element_to_remove = self.search_r(self.root, value)
-    #     successor = self.generate_successor(element_to_remove)
-    #     successor.less = element_to_remove.less
-    #     successor.parent = element_to_remove.parent
-
-    # def generate_successor(self, node: TreeNode):
-    #     if node.more is None:
-    #         node.less.parent = None
-    #         return node.less
-    #     current_node = node.more
-    #     current_node.parent = None
-    #     while current_node.less is not None:
-    #         current_node = current_node.less
-    #     return self.rotate_subtree(current_node)
-
-    def rotate_subtree(self, node: TreeNode):
-        root = node
-        while root.parent is not None:
-            root = root.parent
-        while True:
-            root = self.small_right_rotate(root.less)
-            if root == node:
-                return root
-
-
     # FIXME не работает еще
     def balance(self):
-        right = self.root.more
-        # while right.less is not None:
-        #     right = right.less
+        self.root.right = self.balance_right(self.root.right)
 
-        left = self.root.less
-        # while left.more is not None:
-        #     left = left.more
+    def balance_right(self, node: TreeNode):
+        if node.left is None:
+            if node.right is not None:
+                return self.balance_right(node.right)
+            else:
+                return node
+        successor = node
+        while successor.left is not None:
+            successor = successor.left
 
-        while True:
-            right = self.small_right_rotate(right)
-            if right == self:
-                break
-        while True:
-            left = self.small_left_rotate(left)
-            if left == self:
-                break
-        self.root.more = right
-        self.root.less = left
+        node_parent = node.parent
+        node_parent.right = None
+        while successor.parent != node:
+            parent = successor.parent.parent
+
+            successor.parent.parent = None
+            successor = self.small_right_rotate(successor)
+            parent.less = None
+            current_node = successor
+            while current_node.right is not None:
+                current_node = current_node.right
+            current_node.right = parent
+
+            successor.parent = node
+            node.right = successor
+        successor.parent = node_parent
+        node_parent.right = successor
+        node = node_parent
+        print()
+        return self.balance_right(successor.right)
 
     #                                              (9)
     #                           (7 *node*)                     (10)
@@ -275,45 +271,96 @@ class Tree:
         return node
 
 
-if __name__ == "__main__":
+def test_random():
+    # Random fill tree
+    print("Start insertion")
+    start_time_seconds = time.time()
+    iteration_time = start_time_seconds
+    random_fill_tree = Tree()
+
+    element_addition = []
+    # Insertion elements part
+    n = 0
+    while iteration_time - start_time_seconds < 60:
+        random_fill_tree.add(np.random.randint(1000))
+        current_time = time.time()
+        element_addition.append(np.round((current_time - iteration_time) * 1000, 4))
+        iteration_time = current_time
+        n += 1
+    print("Start searching. {0} elements added".format(n))
+    start_searching_time = time.time()
+    # Searching part
+    for i in range(int(n / 10)):
+        search = np.random.randint(1000)
+        random_fill_tree.search(search)
+    search_time = np.round((time.time() - start_searching_time) * 1000, 4)
+
+    print("Start remove")
+    start_remove_time = time.time()
+    for i in range(int(n / 10)):
+        search = np.random.randint(1000)
+        random_fill_tree.remove(search)
+    remove_time = np.round((time.time() - start_remove_time) * 1000, 4)
+
+    # output
+    for i in range(n - 1):
+        print("Addition {0} took {1} ms".format(i, element_addition[i]))
+    print("Search took: {0} ms".format(search_time))
+    print("Removement took: {0} ms".format(remove_time))
+
+    add_data = np.squeeze(element_addition)
+    plt.plot(add_data)
+    plt.xlabel("Addition count")
+    plt.ylabel("Addition time")
+    plt.show()
+
+def test_linear_increase():
+    print("Start insertion")
+    start_time_seconds = time.time()
+    iteration_time = start_time_seconds
     tree = Tree()
-    tree.add(3)
-    tree.add(4)
-    tree.add(1)
-    tree.add(2)
-    tree.add(3.5)
-    tree.add(5)
-    tree.add(1.5)
 
-    print(tree.search(3))
-    tree.remove(3)
-    tree.remove(4)
-    print(tree.search(3))
+    element_addition = []
+    # Insertion elements part
+    n = 0
+    while iteration_time - start_time_seconds < 60:
+        tree.add(n)
+        current_time = time.time()
+        element_addition.append(np.round((current_time - iteration_time) * 1000, 4))
+        iteration_time = current_time
+        n += 1
+    print("Start searching. {0} elements added".format(n))
 
-    # tree.add(3)
-    # tree.add(2)
-    # tree.add(6)
-    # tree.add(1)
-    # tree.add(1.5)
-    # tree.add(0.5)
-    # tree.add(0.7)
-    # tree.add(0.3)
-    # tree.add(0.6)
-    # tree.add(0.8)
-    # tree.add(0.55)
-    # tree.add(0.75)
-    # tree.add(0.9)
-    #
-    # tree.add(9)
-    # tree.add(7)
-    # tree.add(10)
-    # tree.add(5)
-    # tree.add(8)
-    # tree.add(6.5)
-    # tree.add(6.3)
-    # tree.add(6.8)
-    # tree.add(11)
-    # tree.add(12)
-    # tree.balance()
-    # a = tree.generate_successor(tree.search_r(tree.root, 6))
-    # print(a)
+    start_searching_time = time.time()
+    # Searching part
+    for i in range(int(n / 10)):
+        search = np.random.randint(1000)
+        tree.search(search)
+    search_time = np.round((time.time() - start_searching_time) * 1000, 4)
+
+    print("Start remove")
+    start_remove_time = time.time()
+    for i in range(int(n / 10)):
+        search = np.random.randint(1000)
+        tree.remove(search)
+    remove_time = np.round((time.time() - start_remove_time) * 1000, 4)
+
+
+    # output
+    for i in range(n - 1):
+        print("Addition {0} took {1} ms".format(i, element_addition[i]))
+
+    print("Search took: {0} ms".format(search_time))
+    print("Removement took: {0} ms".format(remove_time))
+    add_data = np.squeeze(element_addition)
+    plt.plot(add_data)
+    plt.xlabel("Addition count")
+    plt.ylabel("Addition time")
+    plt.show()
+
+if __name__ == "__main__":
+    sys.setrecursionlimit(1000000)
+    test_linear_increase()
+
+
+
