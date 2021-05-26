@@ -76,24 +76,23 @@ class Tree:
     def search(self, value: float):
         if self.root is None:
             return False
-        return self.search_r(self.root, value) is not None
+        return self.search_r(value) is not None
 
 
     #
-    #    Рекурсивный поиск узла дерева с заданным значением
+    #    Поиск узла дерева с заданным значением
     #    @return TreeNode - узел дерева с заданным значением
     #
-    def search_r(self, item: TreeNode, value: float):
-        if item is None:
-            return None
-        if item.value == value:
-            return item
-        if (item.more is None and item.value < value) or (item.less is None and item.value > value):
-            return None
-        if item.value < value:
-            return self.search_r(item.more, value)
-        else:
-            return self.search_r(item.less, value)
+    def search_r(self, value: float):
+        current_item = self.root
+        while current_item.value != value:
+            if current_item.value < value:
+                current_item = current_item.more
+            else:
+                current_item = current_item.less
+            if current_item is None:
+                return None
+        return current_item
 
     #                                            (3)
     #                          (2)                                  [6 *remove*]
@@ -121,7 +120,7 @@ class Tree:
     #    Меньшая ветка удаленного элемента попадает в наименьшую сторону большей ветки
     #
     def remove(self, value: float):
-        element_to_remove = self.search_r(self.root, value)
+        element_to_remove = self.search_r(value)
         if element_to_remove is None:
             return
         root = element_to_remove.parent
@@ -173,7 +172,7 @@ class Tree:
         self.root.right = self.balance_right(self.root.right)
 
     def balance_right(self, node: TreeNode):
-        if node.left is None:
+        if node.less is None:
             if node.right is not None:
                 return self.balance_right(node.right)
             else:
